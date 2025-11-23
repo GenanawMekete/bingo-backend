@@ -163,3 +163,59 @@ function endGame(gameId, reason) {
 }
 
 module.exports = router;
+    const newNumber = callRandomNumber(game.calledNumbers);
+    if (newNumber) {
+      game.calledNumbers.push(newNumber.value);
+      game.currentNumber = newNumber.value;
+
+      // Emit to all players in the game
+      const io = require('../config/socket').getIO();
+      io.to(gameId).emit('number-called', {
+        number: newNumber,
+        calledCount: game.calledNumbers.length,
+        currentNumber: game.currentNumber
+      });
+
+      if (game.calledNumbers.length >= 75) {
+        endGame(gameId, 'All numbers called');
+        clearInterval(callInterval);
+      }
+    }
+  }, parseInt(process.env.NUMBER_CALL_INTERVAL) || 2000);
+}
+
+// Call a random number
+function callRandomNumber(calledNumbers) {
+  if (calledNumbers.length >= 75) return null;
+
+  let number;
+  do {
+    number = Math.floor(Math.random() * 75) + 1;
+  } while (calledNumbers.includes(number));
+
+  const letters = ['B', 'I', 'N', 'G', 'O'];
+  const letterIndex = Math.floor((number - 1) / 15);
+
+  return {
+    value: number,
+    letter: letters[letterIndex],
+    display: `${letters[letterIndex]}-${number}`
+  };
+}
+
+// End a game
+function endGame(gameId, reason) {
+  const game = games.get(gameId);
+  if (!game) return;
+
+  game.status = 'ended';
+  game.endedAt = new Date();
+  game.endReason = reason;
+
+  // Clean up after 1 minute
+  setTimeout(() => {
+    games.delete(gameId);
+  }, 60000);
+}
+
+module.exports = router;

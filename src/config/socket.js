@@ -1,59 +1,68 @@
-const { v4: uuidv4 } = require('uuid');
+const { Server } = require('socket.io');
+const logger = require('../utils/logger');
+const { authenticateSocket } = require('../middleware/socketAuth');
 
-function socketHandler(io) {
+let io;
+
+const initSocket = (server) => {
+  io = new Server(server, {
+    cors: {
+      origin: process.env.CLIENT_URL || "*",
+      methods: ["GET", "POST"],
+      credentials: true
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000
+  });
+
+  // Socket middleware
+  io.use(authenticateSocket);
+
   io.on('connection', (socket) => {
-    console.log(`Player connected: ${socket.id}`);
+    logger.info(`🔌 New socket connection: ${socket.id}`);
+    
+    // Join player to their room
+    if (socket.userId) {
+      socket.join(`user:${socket.userId}`);
+    }
 
-    // Player joins a game
-    socket.on('join-game', async (data) => {
-      try {
-        const { gameId, player, selectedCards, betAmount } = data;
-        
-        // Join the game room
-        socket.join(gameId);
-        socket.gameId = gameId;
-        socket.playerId = player.id;
+    // Import and register event handlers
+    require('../events/gameEvents')(socket, io);
+    require('../events/playerEvents')(socket, io);
+    require('../events/roomEvents')(socket, io);
+    require('../events/bingoEvents')(socket, io);
 
-        // Notify others
-        socket.to(gameId).emit('player-joined', {
-          player: player,
-          totalPlayers: io.sockets.adapter.rooms.get(gameId)?.size || 1
-        });
-
-        console.log(`Player ${player.name} joined game ${gameId}`);
-      } catch (error) {
-        socket.emit('error', { message: error.message });
-      }
+    socket.on('disconnect', (reason) => {
+      logger.info(`🔌 Socket disconnected: ${socket.id} - Reason: ${reason}`);
+      handleDisconnect(socket);
     });
 
-    // Player leaves the game
-    socket.on('leave-game', (data) => {
-      const { gameId, playerId } = data;
-      socket.leave(gameId);
-      socket.to(gameId).emit('player-left', { playerId });
-    });
-
-    // Player claims bingo
-    socket.on('claim-bingo', (data) => {
-      const { gameId, playerId, cardId, pattern } = data;
-      socket.to(gameId).emit('bingo-claimed', {
-        playerId,
-        cardId,
-        pattern,
-        timestamp: new Date()
-      });
-    });
-
-    // Disconnect
-    socket.on('disconnect', () => {
-      if (socket.gameId) {
-        socket.to(socket.gameId).emit('player-disconnected', { 
-          playerId: socket.playerId 
-        });
-      }
-      console.log(`Player disconnected: ${socket.id}`);
+    socket.on('error', (error) => {
+      logger.error(`Socket error for ${socket.id}:`, error);
     });
   });
-}
 
-module.exports = { socketHandler };
+  return io;
+};
+
+const handleDisconnect = (socket) => {
+  // Clean up when player disconnects
+  if (socket.roomId) {
+    socket.to(socket.roomId).emit('player_left', {
+      playerId: socket.userId,
+      playerCount: io.sockets.adapter.rooms.get(socket.roomId)?.size || 0
+    });
+  }
+};
+
+const getIO = () => {
+  if (!io) {
+    throw new Error('Socket.io not initialized!');
+  }
+  return io;
+};
+
+module.exports = {
+  initSocket,
+  getIO
+};

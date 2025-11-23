@@ -1,13 +1,13 @@
-const User = require('./User');
+const Player = require('./Player');
 const Game = require('./Game');
+const Room = require('./Room');
 const BingoCard = require('./BingoCard');
 const Transaction = require('./Transaction');
-const Leaderboard = require('./Leaderboard');
 
 module.exports = {
-  User,
+  Player,
   Game,
+  Room,
   BingoCard,
-  Transaction,
-  Leaderboard
+  Transaction
 };

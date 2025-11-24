@@ -1,15 +1,21 @@
 {
+  
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "prod": "NODE_ENV=production node server.js",
-    "build": "npm install",
     "test": "jest",
-    "migrate": "node src/database/migrations/runMigrations.js",
-    "seed": "node src/database/seeders/runSeeders.js",
+    "migrate": "node src/database/migrations/runMigrations.js run",
+    "migrate:list": "node src/database/migrations/runMigrations.js list",
+    "seed": "node src/database/seeders/runSeeders.js run",
+    "seed:list": "node src/database/seeders/runSeeders.js list",
+    "seed:reset": "node src/database/seeders/runSeeders.js reset",
+    "db:setup": "npm run migrate && npm run seed",
+    "db:reset": "npm run seed:reset && npm run seed",
     "lint": "eslint src/",
     "fix": "eslint src/ --fix"
-  },
+  }
+
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

@@ -1,28 +1,31 @@
 const mongoose = require('mongoose');
 
 async function run() {
-  console.log('Creating rooms collection...');
+  console.log('Creating games collection...');
+  
+  // Just create the collection and indexes - no need to define schema here
+  // since the models will define the schema when the app runs
   
   const db = mongoose.connection.db;
   
-  // Create rooms collection if it doesn't exist
-  const collections = await db.listCollections({ name: 'rooms' }).toArray();
+  // Create games collection if it doesn't exist
+  const collections = await db.listCollections({ name: 'games' }).toArray();
   if (collections.length === 0) {
-    await db.createCollection('rooms');
-    console.log('✅ Rooms collection created');
+    await db.createCollection('games');
+    console.log('✅ Games collection created');
   } else {
-    console.log('⏭️ Rooms collection already exists');
+    console.log('⏭️ Games collection already exists');
   }
   
   // Create indexes
-  await db.collection('rooms').createIndex({ roomId: 1 }, { unique: true });
-  await db.collection('rooms').createIndex({ status: 1 });
-  await db.collection('rooms').createIndex({ 'config.type': 1 });
+  await db.collection('games').createIndex({ gameId: 1 }, { unique: true });
+  await db.collection('games').createIndex({ status: 1 });
+  await db.collection('games').createIndex({ room: 1 });
   
-  console.log('✅ Rooms indexes created');
+  console.log('✅ Games indexes created');
 }
 
 module.exports = {
-  name: '003_create_rooms',
+  name: '002_create_games',
   run
 };

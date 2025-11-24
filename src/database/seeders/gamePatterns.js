@@ -1,12 +1,7 @@
 const mongoose = require('mongoose');
-const logger = require('../../utils/logger');
 
 async function run() {
-  logger.info('Setting up game patterns configuration...');
-  
-  // This seeder doesn't create actual database records
-  // but ensures the game patterns are properly configured
-  // in the application constants
+  console.log('Setting up game patterns configuration...');
   
   const patterns = [
     {
@@ -37,29 +32,32 @@ async function run() {
     }
   ];
 
-  logger.info('✅ Game patterns configured:');
+  console.log('✅ Game patterns configured:');
   patterns.forEach(pattern => {
-    logger.info(`   📊 ${pattern.displayName}: ${pattern.description}`);
+    console.log(`   📊 ${pattern.displayName}: ${pattern.description}`);
   });
 
-  // Create a configuration document if needed
-  const Config = mongoose.model('Config', new mongoose.Schema({
-    key: String,
-    value: mongoose.Schema.Types.Mixed,
-    updatedAt: { type: Date, default: Date.now }
-  }));
+  // Create a configuration collection if needed
+  const db = mongoose.connection.db;
+  const collections = await db.listCollections({ name: 'configurations' }).toArray();
+  if (collections.length === 0) {
+    await db.createCollection('configurations');
+  }
 
-  await Config.findOneAndUpdate(
+  // Save patterns to configurations collection
+  await db.collection('configurations').updateOne(
     { key: 'winning_patterns' },
     { 
-      key: 'winning_patterns',
-      value: patterns,
-      updatedAt: new Date()
+      $set: {
+        key: 'winning_patterns',
+        value: patterns,
+        updatedAt: new Date()
+      }
     },
-    { upsert: true, new: true }
+    { upsert: true }
   );
 
-  logger.info('✅ Winning patterns saved to database configuration');
+  console.log('✅ Winning patterns saved to database configuration');
 }
 
 module.exports = {

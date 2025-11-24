@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const logger = require('../../utils/logger');
 
 async function run() {
-  logger.info('Creating players collection...');
+  console.log('Creating players collection...');
   
+  // Define the schema
   const playerSchema = new mongoose.Schema({
     telegramId: { type: Number, required: true, unique: true },
     telegramUsername: { type: String, trim: true, lowercase: true },
@@ -35,10 +35,12 @@ async function run() {
     timestamps: true
   });
 
-  // Create the model
-  mongoose.model('Player', playerSchema);
+  // Create the collection with the schema
+  mongoose.connection.db.collection('players').createIndex({ telegramId: 1 }, { unique: true });
+  mongoose.connection.db.collection('players').createIndex({ telegramUsername: 1 });
+  mongoose.connection.db.collection('players').createIndex({ isOnline: 1 });
   
-  logger.info('✅ Players collection schema created');
+  console.log('✅ Players collection created with indexes');
 }
 
 module.exports = {

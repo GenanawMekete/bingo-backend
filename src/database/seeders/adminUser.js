@@ -1,16 +1,26 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const logger = require('../../utils/logger');
 
 async function run() {
-  logger.info('Creating admin user...');
+  console.log('Creating admin user...');
   
-  const Player = mongoose.model('Player');
+  // Define a simple player schema for this seeder
+  const PlayerSchema = new mongoose.Schema({
+    telegramId: Number,
+    telegramUsername: String,
+    firstName: String,
+    lastName: String,
+    coins: Number,
+    level: Number,
+    experience: Number,
+    referralCode: String
+  });
+  
+  const Player = mongoose.model('Player', PlayerSchema);
   
   // Check if admin already exists
   const existingAdmin = await Player.findOne({ telegramId: 1 });
   if (existingAdmin) {
-    logger.info('⏭️  Admin user already exists');
+    console.log('⏭️  Admin user already exists');
     return;
   }
 
@@ -28,10 +38,10 @@ async function run() {
 
   await adminUser.save();
   
-  logger.info('✅ Admin user created successfully');
-  logger.info('   👤 Username: admin');
-  logger.info('   💰 Coins: 10,000');
-  logger.info('   🎯 Level: 100');
+  console.log('✅ Admin user created successfully');
+  console.log('   👤 Username: admin');
+  console.log('   💰 Coins: 10,000');
+  console.log('   🎯 Level: 100');
 }
 
 module.exports = {

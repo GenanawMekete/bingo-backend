@@ -1,11 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
-import logging
-
 from app.core.database import get_db
 from app.models.user import User
-from app.models.inventory import InventoryItem
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
